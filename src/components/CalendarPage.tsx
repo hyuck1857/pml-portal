@@ -64,27 +64,70 @@ export default function CalendarPage() {
         setEvents(prev => prev.filter(ev => ev.id !== id))
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const [currentDate, setCurrentDate] = useState(() => Object.freeze(new Date(new Date().getFullYear(), new Date().getMonth(), 1)))
+
+    const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+    const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+
+    const getDateString = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    const today = getDateString(new Date())
     const filtered = activeFilter === 'all' ? events : events.filter(e => e.type === activeFilter)
-    const upcoming = filtered.filter(e => e.date >= today)
-    const past = filtered.filter(e => e.date < today)
 
-    const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString(t('ko-KR', 'en-US'), { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
+    const renderCalendar = () => {
+        const year = currentDate.getFullYear()
+        const month = currentDate.getMonth()
+        const firstDay = new Date(year, month, 1).getDay()
+        const daysInMonth = new Date(year, month + 1, 0).getDate()
+        
+        let days = []
+        for (let i = 0; i < firstDay; i++) days.push(null)
+        for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i))
+        
+        const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-    const EventCard = ({ ev }: { ev: Event }) => {
-        const info = getTypeInfo(ev.type)
         return (
-            <div className="event-item">
-                <div className={`event-dot ${info.color}`} />
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600 }}>{ev.title}</div>
-                    <div className="event-date">📅 {fmtDate(ev.date)} · {t(info.ko, info.en)} · {ev.created_by}</div>
+            <div style={{ marginTop: '1rem', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--card)' }}>
+                    <button className="btn btn-ghost" style={{ padding: '0.4rem 0.8rem' }} onClick={prevMonth}>&lt;</button>
+                    <h3 style={{ margin: 0 }}>{currentDate.toLocaleDateString(t('ko-KR', 'en-US'), { year: 'numeric', month: 'long' })}</h3>
+                    <button className="btn btn-ghost" style={{ padding: '0.4rem 0.8rem' }} onClick={nextMonth}>&gt;</button>
                 </div>
-                {(user?.name === ev.created_by || user?.role === 'pi') && (
-                    <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => deleteEvent(ev.id, ev.created_by)}>
-                        {t('삭제', 'Del')}
-                    </button>
-                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.3)' }}>
+                    {weekDays.map(d => <div key={d} style={{ padding: '0.8rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600 }}>{d}</div>)}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', background: 'var(--border)' }}>
+                    {days.map((day, idx) => {
+                        if (!day) return <div key={`empty-${idx}`} style={{ background: 'var(--bg2)', minHeight: '120px' }} />
+                        
+                        const dateStr = getDateString(day)
+                        const dayEvents = filtered.filter(e => e.date === dateStr)
+                        const isToday = dateStr === today
+                        
+                        return (
+                            <div key={dateStr} style={{ background: 'var(--bg2)', padding: '0.5rem', minHeight: '120px', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ textAlign: 'right', fontSize: '0.85rem', color: isToday ? '#fff' : 'var(--text)', fontWeight: isToday ? 700 : 400, marginBottom: '0.5rem', ...(isToday && {background: 'var(--green)', padding:'2px 6px', borderRadius:'6px', display:'inline-block', marginLeft:'auto'}) }}>
+                                    {day.getDate()}
+                                </div>
+                                <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+                                    {dayEvents.map(ev => {
+                                        const info = getTypeInfo(ev.type)
+                                        return (
+                                            <div key={ev.id} title={ev.title} style={{ fontSize: '0.75rem', padding: '0.3rem 0.4rem', borderRadius: '4px', background: 'var(--card)', borderLeft: `3px solid var(--${info.value==='deadline'?'red':info.value==='meeting'?'blue':info.value==='other'?'yellow':'green'})`, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:'pointer', fontWeight: 500 }} onClick={() => deleteEvent(ev.id, ev.created_by)}>
+                                                {ev.title}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
         )
     }
@@ -116,36 +159,11 @@ export default function CalendarPage() {
 
             {loading && <div className="loading">Loading...</div>}
 
-            <div className="calendar-grid">
-                <div>
-                    <h4 style={{ marginBottom: '1rem', color: 'var(--green)' }}>🗓 {t('다가오는 일정', 'Upcoming')}</h4>
-                    <div className="event-list">
-                        {upcoming.length === 0 && (
-                            <div className="empty-state" style={{ padding: '2rem' }}>
-                                <div className="emoji">🗓</div>
-                                <p>{t('예정된 일정이 없습니다.', 'No upcoming events.')}</p>
-                            </div>
-                        )}
-                        {upcoming.map(ev => <EventCard key={ev.id} ev={ev} />)}
-                    </div>
-                </div>
-                <div>
-                    <h4 style={{ marginBottom: '1rem', color: 'var(--muted)' }}>📂 {t('지난 일정', 'Past Events')}</h4>
-                    <div className="event-list">
-                        {past.length === 0 && (
-                            <div className="empty-state" style={{ padding: '2rem' }}>
-                                <div className="emoji">📂</div>
-                                <p>{t('지난 일정이 없습니다.', 'No past events.')}</p>
-                            </div>
-                        )}
-                        {[...past].reverse().map(ev => (
-                            <div key={ev.id} style={{ opacity: 0.5 }}>
-                                <EventCard ev={ev} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            <div style={{ marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem' }}>
+                * {t('스케줄을 삭제하려면 달력 안의 해당 스케줄을 클릭하세요.', 'Click on an event block in the calendar to delete it.')}
             </div>
+
+            {renderCalendar()}
 
             {showModal && (
                 <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>

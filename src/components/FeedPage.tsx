@@ -15,6 +15,7 @@ export default function FeedPage() {
     const [posts, setPosts] = useState<Post[]>([])
     const [loading, setLoading] = useState(true)
     const [showModal, setShowModal] = useState(false)
+    const [editingPost, setEditingPost] = useState<Post | null>(null)
     const [newTitle, setNewTitle] = useState('')
     const [newContent, setNewContent] = useState('')
     const [saving, setSaving] = useState(false)
@@ -44,13 +45,39 @@ export default function FeedPage() {
         e.preventDefault()
         if (!newTitle.trim() || !newContent.trim() || !user) return
         setSaving(true)
-        await supabase.from('posts').insert({
-            author_id: user.id, author_name: user.name,
-            title: newTitle.trim(), content: newContent.trim()
-        })
-        setNewTitle(''); setNewContent('')
+        if (editingPost) {
+            await supabase.from('posts').update({
+                title: newTitle.trim(), content: newContent.trim()
+            }).eq('id', editingPost.id)
+        } else {
+            await supabase.from('posts').insert({
+                author_id: user.id, author_name: user.name,
+                title: newTitle.trim(), content: newContent.trim()
+            })
+        }
+        setNewTitle(''); setNewContent(''); setEditingPost(null)
         setShowModal(false); setSaving(false)
         fetchPosts()
+    }
+
+    async function deletePost(id: string) {
+        if (!window.confirm(t('정말 삭제하시겠습니까?', 'Are you sure you want to delete this log?'))) return
+        await supabase.from('posts').delete().eq('id', id)
+        fetchPosts()
+    }
+
+    function editPost(post: Post) {
+        setEditingPost(post)
+        setNewTitle(post.title)
+        setNewContent(post.content)
+        setShowModal(true)
+    }
+
+    function openNewModal() {
+        setEditingPost(null)
+        setNewTitle('')
+        setNewContent('')
+        setShowModal(true)
     }
 
     async function toggleComments(postId: string) {
@@ -87,7 +114,7 @@ export default function FeedPage() {
                         {t('실험 결과, 인사이트, 진행 상황을 공유하세요.', 'Share results, insights, and progress updates.')}
                     </p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                <button className="btn btn-primary" onClick={openNewModal}>
                     {t('✏️  새 연구로그 작성', '✏️  New Research Log')}
                 </button>
             </div>
@@ -117,6 +144,12 @@ export default function FeedPage() {
                             <button className="comment-toggle-btn" onClick={() => toggleComments(post.id)}>
                                 💬 {openComments[post.id] ? t('댓글 닫기', 'Hide Comments') : `${t('댓글 보기', 'Show Comments')} (${comments[post.id]?.length ?? '…'})`}
                             </button>
+                            {(user?.name === post.author_name || user?.role === 'pi') && (
+                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
+                                    <button className="comment-toggle-btn" onClick={() => editPost(post)}>✏️ {t('수정', 'Edit')}</button>
+                                    <button className="comment-toggle-btn" style={{ color: 'var(--red)' }} onClick={() => deletePost(post.id)}>🗑️ {t('삭제', 'Delete')}</button>
+                                </div>
+                            )}
                         </div>
 
                         {openComments[post.id] && (
@@ -153,7 +186,7 @@ export default function FeedPage() {
             {showModal && (
                 <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
                     <div className="modal">
-                        <h3>{t('새 연구 로그 작성', 'New Research Log')}</h3>
+                        <h3>{editingPost ? t('연구 로그 수정', 'Edit Research Log') : t('새 연구 로그 작성', 'New Research Log')}</h3>
                         <form onSubmit={submitPost}>
                             <div className="form-group">
                                 <label>{t('제목', 'Title')}</label>
