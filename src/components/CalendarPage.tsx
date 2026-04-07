@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 
 type Event = {
-    id: string; title: string; date: string; type: string; created_by: string
+    id: string; title: string; date: string; end_date?: string; type: string; created_by: string
 }
 
 const EVENT_TYPES = [
@@ -25,6 +25,7 @@ export default function CalendarPage() {
     const [showModal, setShowModal] = useState(false)
     const [title, setTitle] = useState('')
     const [date, setDate] = useState('')
+    const [endDate, setEndDate] = useState('')
     const [type, setType] = useState('seminar')
     const [saving, setSaving] = useState(false)
     const [activeFilter, setActiveFilter] = useState('all')
@@ -47,9 +48,14 @@ export default function CalendarPage() {
     async function addEvent(e: React.FormEvent) {
         e.preventDefault()
         if (!title.trim() || !date || !user) return
+        const finalEndDate = endDate || date
+        if (finalEndDate < date) {
+            alert(t('종료일은 시작일보다 빠를 수 없습니다.', 'End date cannot be before start date.'))
+            return
+        }
         setSaving(true)
-        await supabase.from('events').insert({ title: title.trim(), date, type, created_by: user.name })
-        setTitle(''); setDate(''); setType('seminar')
+        await supabase.from('events').insert({ title: title.trim(), date, end_date: finalEndDate, type, created_by: user.name })
+        setTitle(''); setDate(''); setEndDate(''); setType('seminar')
         setShowModal(false); setSaving(false)
     }
 
@@ -78,6 +84,38 @@ export default function CalendarPage() {
 
     const today = getDateString(new Date())
     const filtered = activeFilter === 'all' ? events : events.filter(e => e.type === activeFilter)
+    const upcoming = filtered.filter(e => (e.end_date || e.date) >= today)
+    const past = filtered.filter(e => (e.end_date || e.date) < today)
+
+    const isDateInRange = (e: Event, dateStr: string) => {
+        const end = e.end_date || e.date
+        return dateStr >= e.date && dateStr <= end
+    }
+
+    const fmtDateRange = (start: string, end?: string) => {
+        const s = new Date(start + 'T00:00:00').toLocaleDateString(t('ko-KR', 'en-US'), { month: 'long', day: 'numeric', weekday: 'short' })
+        if (!end || start === end) return s
+        const e = new Date(end + 'T00:00:00').toLocaleDateString(t('ko-KR', 'en-US'), { month: 'long', day: 'numeric', weekday: 'short' })
+        return `${s} ~ ${e}`
+    }
+
+    const EventCard = ({ ev }: { ev: Event }) => {
+        const info = getTypeInfo(ev.type)
+        return (
+            <div className="event-item">
+                <div className={`event-dot ${info.color}`} />
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>{ev.title}</div>
+                    <div className="event-date">📅 {fmtDateRange(ev.date, ev.end_date)} · {t(info.ko, info.en)} · {ev.created_by}</div>
+                </div>
+                {(user?.name === ev.created_by || user?.role === 'pi') && (
+                    <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => deleteEvent(ev.id, ev.created_by)}>
+                        {t('삭제', 'Del')}
+                    </button>
+                )}
+            </div>
+        )
+    }
 
     const renderCalendar = () => {
         const year = currentDate.getFullYear()
@@ -106,7 +144,7 @@ export default function CalendarPage() {
                         if (!day) return <div key={`empty-${idx}`} style={{ background: 'var(--bg2)', minHeight: '120px' }} />
                         
                         const dateStr = getDateString(day)
-                        const dayEvents = filtered.filter(e => e.date === dateStr)
+                        const dayEvents = filtered.filter(e => isDateInRange(e, dateStr))
                         const isToday = dateStr === today
                         
                         return (
@@ -160,10 +198,43 @@ export default function CalendarPage() {
             {loading && <div className="loading">Loading...</div>}
 
             <div style={{ marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem' }}>
-                * {t('스케줄을 삭제하려면 달력 안의 해당 스케줄을 클릭하세요.', 'Click on an event block in the calendar to delete it.')}
+                * {t('스케줄을 삭제하려면 달력 안의 해당 스케줄을 클릭하거나 아래 목록의 삭제 버튼을 누르세요.', 'Click on an event in the calendar or use the delete button below to remove it.')}
             </div>
 
             {renderCalendar()}
+
+            <br/><br/>
+            
+            <div className="calendar-grid">
+                <div>
+                    <h4 style={{ marginBottom: '1rem', color: 'var(--green)' }}>🗓 {t('다가오는 일정', 'Upcoming')}</h4>
+                    <div className="event-list">
+                        {upcoming.length === 0 && (
+                            <div className="empty-state" style={{ padding: '2rem' }}>
+                                <div className="emoji">🗓</div>
+                                <p>{t('예정된 일정이 없습니다.', 'No upcoming events.')}</p>
+                            </div>
+                        )}
+                        {upcoming.map(ev => <EventCard key={ev.id} ev={ev} />)}
+                    </div>
+                </div>
+                <div>
+                    <h4 style={{ marginBottom: '1rem', color: 'var(--muted)' }}>📂 {t('지난 일정', 'Past Events')}</h4>
+                    <div className="event-list">
+                        {past.length === 0 && (
+                            <div className="empty-state" style={{ padding: '2rem' }}>
+                                <div className="emoji">📂</div>
+                                <p>{t('지난 일정이 없습니다.', 'No past events.')}</p>
+                            </div>
+                        )}
+                        {[...past].reverse().map(ev => (
+                            <div key={ev.id} style={{ opacity: 0.5 }}>
+                                <EventCard ev={ev} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
 
             {showModal && (
                 <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
@@ -177,9 +248,15 @@ export default function CalendarPage() {
                                     value={title} onChange={e => setTitle(e.target.value)} required autoFocus
                                 />
                             </div>
-                            <div className="form-group">
-                                <label>{t('날짜', 'Date')}</label>
-                                <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+                            <div className="form-group" style={{ display: 'flex', gap: '1rem' }}>
+                                <div style={{ flex: 1 }}>
+                                    <label>{t('시작일', 'Start Date')}</label>
+                                    <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label>{t('종료일 (선택)', 'End Date (Optional)')}</label>
+                                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>{t('종류', 'Type')}</label>
