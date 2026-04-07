@@ -23,6 +23,7 @@ export default function CalendarPage() {
     const [events, setEvents] = useState<Event[]>([])
     const [loading, setLoading] = useState(true)
     const [showModal, setShowModal] = useState(false)
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const [title, setTitle] = useState('')
     const [date, setDate] = useState('')
     const [endDate, setEndDate] = useState('')
@@ -45,7 +46,7 @@ export default function CalendarPage() {
         setLoading(false)
     }
 
-    async function addEvent(e: React.FormEvent) {
+    async function submitEvent(e: React.FormEvent) {
         e.preventDefault()
         if (!title.trim() || !date || !user) return
         const finalEndDate = endDate || date
@@ -54,9 +55,28 @@ export default function CalendarPage() {
             return
         }
         setSaving(true)
-        await supabase.from('events').insert({ title: title.trim(), date, end_date: finalEndDate, type, created_by: user.name })
-        setTitle(''); setDate(''); setEndDate(''); setType('seminar')
+        if (editingEvent) {
+            await supabase.from('events').update({ title: title.trim(), date, end_date: finalEndDate, type }).eq('id', editingEvent.id)
+        } else {
+            await supabase.from('events').insert({ title: title.trim(), date, end_date: finalEndDate, type, created_by: user.name })
+        }
+        setTitle(''); setDate(''); setEndDate(''); setType('seminar'); setEditingEvent(null)
         setShowModal(false); setSaving(false)
+    }
+
+    function openEditModal(ev: Event) {
+        setEditingEvent(ev)
+        setTitle(ev.title)
+        setDate(ev.date)
+        setEndDate(ev.end_date || ev.date)
+        setType(ev.type)
+        setShowModal(true)
+    }
+
+    function openNewModal() {
+        setEditingEvent(null)
+        setTitle(''); setDate(''); setEndDate(''); setType('seminar')
+        setShowModal(true)
     }
 
     async function deleteEvent(id: string, createdBy: string) {
@@ -109,9 +129,14 @@ export default function CalendarPage() {
                     <div className="event-date">📅 {fmtDateRange(ev.date, ev.end_date)} · {t(info.ko, info.en)} · {ev.created_by}</div>
                 </div>
                 {(user?.name === ev.created_by || user?.role === 'pi') && (
-                    <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => deleteEvent(ev.id, ev.created_by)}>
-                        {t('삭제', 'Del')}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-ghost" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--green)', color: 'var(--green)' }} onClick={() => openEditModal(ev)}>
+                            {t('수정', 'Edit')}
+                        </button>
+                        <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => deleteEvent(ev.id, ev.created_by)}>
+                            {t('삭제', 'Del')}
+                        </button>
+                    </div>
                 )}
             </div>
         )
@@ -156,7 +181,7 @@ export default function CalendarPage() {
                                     {dayEvents.map(ev => {
                                         const info = getTypeInfo(ev.type)
                                         return (
-                                            <div key={ev.id} title={ev.title} style={{ fontSize: '0.75rem', padding: '0.3rem 0.4rem', borderRadius: '4px', background: 'var(--card)', borderLeft: `3px solid var(--${info.value==='deadline'?'red':info.value==='meeting'?'blue':info.value==='other'?'yellow':'green'})`, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:'pointer', fontWeight: 500 }} onClick={() => deleteEvent(ev.id, ev.created_by)}>
+                                            <div key={ev.id} title={ev.title} style={{ fontSize: '0.75rem', padding: '0.3rem 0.4rem', borderRadius: '4px', background: 'var(--card)', borderLeft: `3px solid var(--${info.value==='deadline'?'red':info.value==='meeting'?'blue':info.value==='other'?'yellow':'green'})`, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:'pointer', fontWeight: 500 }} onClick={() => {if(user?.name === ev.created_by || user?.role === 'pi') openEditModal(ev)}}>
                                                 {ev.title}
                                             </div>
                                         )
@@ -179,7 +204,7 @@ export default function CalendarPage() {
                         {t('세미나, 마감일, 미팅 일정을 공유하세요.', 'Share seminars, deadlines, and meetings.')}
                     </p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                <button className="btn btn-primary" onClick={openNewModal}>
                     {t('📅  일정 추가', '📅  Add Event')}
                 </button>
             </div>
@@ -198,7 +223,7 @@ export default function CalendarPage() {
             {loading && <div className="loading">Loading...</div>}
 
             <div style={{ marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem' }}>
-                * {t('스케줄을 삭제하려면 달력 안의 해당 스케줄을 클릭하거나 아래 목록의 삭제 버튼을 누르세요.', 'Click on an event in the calendar or use the delete button below to remove it.')}
+                * {t('스케줄을 수정하려면 달력 안의 해당 스케줄을 클릭하세요.', 'Click on an event block in the calendar to edit it.')}
             </div>
 
             {renderCalendar()}
@@ -239,8 +264,8 @@ export default function CalendarPage() {
             {showModal && (
                 <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
                     <div className="modal">
-                        <h3>{t('새 일정 추가', 'Add New Event')}</h3>
-                        <form onSubmit={addEvent}>
+                        <h3>{editingEvent ? t('일정 수정', 'Edit Event') : t('새 일정 추가', 'Add New Event')}</h3>
+                        <form onSubmit={submitEvent}>
                             <div className="form-group">
                                 <label>{t('일정 제목', 'Event Title')}</label>
                                 <input
