@@ -4,7 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 
 type Post = {
-    id: string; author_name: string; title: string; content: string; created_at: string
+    id: string; author_name: string; title: string; content: string; created_at: string;
+    comments?: { id: string }[];
 }
 type Comment = {
     id: string; post_id: string; author_name: string; content: string; created_at: string
@@ -25,10 +26,31 @@ export default function FeedPage() {
 
     useEffect(() => {
         fetchPosts()
-        // Real-time subscription for new posts
-        const channel = supabase.channel('posts-channel')
+        // Real-time subscription for new posts and comments
+        const channel = supabase.channel('feed-channel')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
-                setPosts(prev => [payload.new as Post, ...prev])
+                setPosts(prev => [{ ...(payload.new as Post), comments: [] }, ...prev])
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
+                const newComment = payload.new as Comment;
+                
+                // Update open comments list
+                setComments(prev => {
+                    if (prev[newComment.post_id]) {
+                        if (prev[newComment.post_id].find(c => c.id === newComment.id)) return prev;
+                        return { ...prev, [newComment.post_id]: [...prev[newComment.post_id], newComment] }
+                    }
+                    return prev;
+                })
+                
+                // Update post counter
+                setPosts(prevPosts => prevPosts.map(p => {
+                    if (p.id === newComment.post_id) {
+                        if (p.comments?.find(c => c.id === newComment.id)) return p;
+                        return { ...p, comments: [...(p.comments || []), { id: newComment.id }] }
+                    }
+                    return p
+                }))
             })
             .subscribe()
         return () => { supabase.removeChannel(channel) }
@@ -36,7 +58,7 @@ export default function FeedPage() {
 
     async function fetchPosts() {
         setLoading(true)
-        const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false })
+        const { data } = await supabase.from('posts').select('*, comments(id)').order('created_at', { ascending: false })
         setPosts(data || [])
         setLoading(false)
     }
@@ -100,6 +122,14 @@ export default function FeedPage() {
         if (data) {
             setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), data] }))
             setCommentInput(prev => ({ ...prev, [postId]: '' }))
+            
+            setPosts(prevPosts => prevPosts.map(p => {
+                if (p.id === postId) {
+                    if (p.comments?.find(c => c.id === data.id)) return p;
+                    return { ...p, comments: [...(p.comments || []), { id: data.id }] }
+                }
+                return p
+            }))
         }
     }
 
@@ -130,20 +160,37 @@ export default function FeedPage() {
             )}
 
             <div className="feed">
-                {posts.map(post => (
-                    <div key={post.id} className="glass post-card">
-                        <div className="post-meta">
-                            <span className="post-author">👤 {post.author_name}</span>
-                            <span>·</span>
-                            <span>{fmtDate(post.created_at)}</span>
-                        </div>
-                        <h3 className="post-title">{post.title}</h3>
-                        <p className="post-content">{post.content}</p>
+                {posts.map(post => {
+                    const commentCount = openComments[post.id] && comments[post.id] 
+                        ? comments[post.id].length 
+                        : (post.comments?.length || 0);
+                        
+                    return (
+                        <div key={post.id} className="glass post-card">
+                            <div className="post-meta">
+                                <span className="post-author">👤 {post.author_name}</span>
+                                <span>·</span>
+                                <span>{fmtDate(post.created_at)}</span>
+                            </div>
+                            <h3 className="post-title">{post.title}</h3>
+                            <p className="post-content">{post.content}</p>
 
-                        <div className="post-footer">
-                            <button className="comment-toggle-btn" onClick={() => toggleComments(post.id)}>
-                                💬 {openComments[post.id] ? t('댓글 닫기', 'Hide Comments') : `${t('댓글 보기', 'Show Comments')} (${comments[post.id]?.length ?? '…'})`}
-                            </button>
+                            <div className="post-footer">
+                                <button 
+                                    className="comment-toggle-btn" 
+                                    onClick={() => toggleComments(post.id)}
+                                    style={{ 
+                                        color: commentCount > 0 ? 'var(--green)' : 'var(--muted)',
+                                        fontWeight: commentCount > 0 ? 700 : 500,
+                                        background: commentCount > 0 ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                        padding: commentCount > 0 ? '0.4rem 0.8rem' : '0 0',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s',
+                                        marginLeft: commentCount > 0 ? '-0.8rem' : '0' 
+                                    }}
+                                >
+                                    💬 {openComments[post.id] ? t('댓글 닫기', 'Hide Comments') : `${t('댓글 보기', 'Show Comments')} (${commentCount})`}
+                                </button>
                             {(user?.name === post.author_name || user?.role === 'pi') && (
                                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
                                     <button className="comment-toggle-btn" onClick={() => editPost(post)}>✏️ {t('수정', 'Edit')}</button>
@@ -179,7 +226,7 @@ export default function FeedPage() {
                             </div>
                         )}
                     </div>
-                ))}
+                )})}
             </div>
 
             {/* New Post Modal */}
