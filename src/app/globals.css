@@ -20,6 +20,11 @@
     --blue: #3b82f6;
     --yellow: #f59e0b;
     --purple: #a78bfa;
+    /* 할일 상태 차트 색 (다크 배경 색각이상 검증 통과 조합) */
+    --st-todo: #b45309;
+    --st-doing: #3b82f6;
+    --st-done: #059669;
+    --st-confirmed: #8b5cf6;
 }
 
 html {
@@ -1196,5 +1201,206 @@ label {
     textarea,
     select {
         font-size: 16px;
+    }
+}
+
+/* ===================== v3: 할일 현황 요약 + 프로젝트 그룹 ===================== */
+
+/* 상태 범례 */
+.legend-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.7rem;
+}
+
+.legend-row .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+/* 연구원별 요약 표 */
+.summary-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card);
+}
+
+.summary-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.summary-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.summary-table td {
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.summary-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.summary-table tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+/* 터치 기기의 sticky hover가 포커스 상태처럼 보이지 않도록 hover는 hover 지원 기기에서만 */
+@media (hover: hover) {
+    .summary-table tbody tr:hover {
+        background: rgba(16, 185, 129, 0.06);
+    }
+}
+
+.summary-table tbody tr.focused {
+    background: rgba(16, 185, 129, 0.12);
+    box-shadow: inset 3px 0 0 var(--green);
+}
+
+/* 가로 스크롤 시에도 이름 컬럼 고정 */
+.summary-table th:first-child,
+.summary-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #111916;
+}
+
+.summary-table tbody tr.focused td:first-child {
+    background: #16251e;
+}
+
+.summary-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 누적 상태 막대 (2px 표면 간격) */
+.stack-bar {
+    display: flex;
+    gap: 2px;
+    height: 14px;
+    min-width: 140px;
+    border-radius: 4px;
+}
+
+.stack-bar .stack-seg {
+    height: 100%;
+    border-radius: 2px;
+    min-width: 4px;
+}
+
+.stack-bar .stack-empty {
+    height: 100%;
+    width: 100%;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* 컬럼 내 프로젝트 그룹 (장기 프로젝트 상시 표시) */
+.proj-group {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem 0.9rem;
+    margin-bottom: 0.8rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.proj-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.proj-group-header .proj-title {
+    font-weight: 700;
+    font-size: 0.88rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.proj-group .task-card {
+    background: rgba(255, 255, 255, 0.04);
+    margin-top: 0.6rem;
+    margin-bottom: 0;
+}
+
+/* PI 확인 체크박스 (터치 타겟 확보용 패딩 + 시각 밀도 유지용 음수 마진) */
+.check-confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--purple);
+    user-select: none;
+    padding: 0.5rem 0.6rem;
+    margin: -0.35rem -0.3rem;
+    min-height: 42px;
+    border-radius: 8px;
+}
+
+.check-confirm:hover {
+    background: rgba(167, 139, 250, 0.08);
+}
+
+.check-confirm input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    padding: 0;
+    margin: 0;
+    accent-color: var(--st-confirmed);
+    cursor: pointer;
+}
+
+/* 모바일: 누적 막대 옆 압축 수치 (대기·진행중·확인대기·확인됨 순, 범례와 동일) */
+.stack-nums {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .stack-nums {
+        display: inline;
+        margin-left: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .check-confirm input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+    }
+
+    .task-actions {
+        gap: 0.75rem;
     }
 }

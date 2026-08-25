@@ -30,6 +30,7 @@ export type Task = {
     due_date: string | null
     status: TaskStatus
     meeting_id: string | null
+    project_id?: string | null
     created_at: string
     completed_at: string | null
     confirmed_at: string | null
@@ -71,7 +72,7 @@ export type ProjectUpdate = {
 export const TASK_STATUS: Record<TaskStatus, { ko: string; en: string; cls: string }> = {
     todo: { ko: '대기', en: 'To Do', cls: 'chip-todo' },
     doing: { ko: '진행중', en: 'Doing', cls: 'chip-doing' },
-    done: { ko: '완료', en: 'Done', cls: 'chip-done' },
+    done: { ko: '확인 대기', en: 'Awaiting confirm', cls: 'chip-done' },
     confirmed: { ko: '확인됨', en: 'Confirmed', cls: 'chip-confirmed' },
 }
 

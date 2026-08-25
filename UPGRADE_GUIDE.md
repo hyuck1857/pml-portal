@@ -21,6 +21,7 @@
 1. https://supabase.com 로그인 → `pml-portal` 프로젝트 → **SQL Editor**
 2. 이 폴더의 **`supabase_schema_v2.sql`** 파일을 열어 내용 전체 복사
 3. SQL Editor에 붙여넣기 → **Run**
+4. 이어서 **`supabase_schema_v3.sql`**(할 일 ↔ 프로젝트 연결)도 같은 방법으로 Run
 
 > 기존 데이터는 전혀 삭제되지 않으며, 실수로 여러 번 실행해도 안전합니다.
 
