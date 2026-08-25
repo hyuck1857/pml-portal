@@ -19,6 +19,7 @@
     --red: #ef4444;
     --blue: #3b82f6;
     --yellow: #f59e0b;
+    --purple: #a78bfa;
 }
 
 html {
@@ -784,5 +785,416 @@ label {
 
     .mobile-nav-btn.active .tab-icon {
         filter: drop-shadow(0 0 6px var(--green));
+    }
+}
+
+/* ===================== v2: 홈 / 할일 / 미팅 / 연구 ===================== */
+
+/* 섹션 */
+.section {
+    margin-bottom: 2.5rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.section-title h3 {
+    font-size: 1.15rem;
+}
+
+.section-link {
+    background: none;
+    border: none;
+    color: var(--green);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.section-link:hover {
+    text-decoration: underline;
+}
+
+/* 칩 (상태/마감/구분 뱃지) */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.chip-todo {
+    background: rgba(138, 158, 151, 0.15);
+    color: var(--muted);
+    border: 1px solid rgba(138, 158, 151, 0.3);
+}
+
+.chip-doing {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--blue);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.chip-done {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.chip-confirmed {
+    background: rgba(167, 139, 250, 0.15);
+    color: var(--purple);
+    border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+.chip-overdue {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--red);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.chip-soon {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--yellow);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.chip-muted {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+
+/* 연구 단계 칩 */
+.chip-stage-planning {
+    background: rgba(138, 158, 151, 0.15);
+    color: var(--muted);
+    border: 1px solid rgba(138, 158, 151, 0.3);
+}
+
+.chip-stage-experiment {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.chip-stage-analysis {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--yellow);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.chip-stage-writing {
+    background: rgba(167, 139, 250, 0.15);
+    color: var(--purple);
+    border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+.chip-stage-done {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--blue);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+/* 작은 버튼 */
+.btn-xs {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    border-radius: 8px;
+}
+
+/* 할일 보드 (연구원별 컬럼) */
+.task-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+    align-items: start;
+}
+
+.task-col {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem;
+}
+
+.task-col-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+
+.task-col-header .col-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--green);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.task-col-header .col-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.task-col-header .col-count {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.task-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.7rem;
+}
+
+.task-card.overdue {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.task-card.dimmed {
+    opacity: 0.5;
+}
+
+.task-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.task-detail {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin-top: 0.55rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.task-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.7rem;
+}
+
+/* 홈 대시보드 */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem 1.3rem;
+}
+
+.stat-num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    color: var(--green);
+}
+
+.stat-card.alert .stat-num {
+    color: var(--red);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+}
+
+.home-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.list-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.75rem 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    font-size: 0.88rem;
+    flex-wrap: wrap;
+}
+
+.list-row .grow {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 안내 배너 (이메일 미등록 등) */
+.banner {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.9rem 1.2rem;
+    border-radius: 14px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* 미팅 노트 */
+.meeting-card {
+    padding: 1.6rem;
+    margin-bottom: 1.2rem;
+}
+
+.meeting-notes {
+    white-space: pre-wrap;
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 0.92rem;
+}
+
+.action-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    font-size: 0.88rem;
+    flex-wrap: wrap;
+}
+
+/* 연구 업데이트 타임라인 */
+.update-item {
+    border-left: 2px solid var(--border);
+    padding: 0 0 1rem 1rem;
+    margin-left: 0.4rem;
+    position: relative;
+}
+
+.update-item::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 0.35rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+}
+
+.update-date {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+}
+
+.update-text {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* 모바일 더보기 시트 */
+.sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 250;
+}
+
+.sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 260;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 1rem 1rem calc(1.2rem + env(safe-area-inset-bottom, 0.5rem));
+    animation: fadeUp 0.25s ease;
+}
+
+.sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    width: 100%;
+    padding: 0.95rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.sheet-item:hover,
+.sheet-item.active {
+    background: rgba(16, 185, 129, 0.08);
+    color: var(--green);
+}
+
+@media (max-width: 768px) {
+    .page-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .home-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .task-board {
+        grid-template-columns: 1fr;
+    }
+
+    /* iOS Safari: 입력 폰트가 16px 미만이면 포커스 시 화면이 자동 확대됨 */
+    input,
+    textarea,
+    select {
+        font-size: 16px;
     }
 }

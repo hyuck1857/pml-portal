@@ -17,6 +17,7 @@ export default function LoginPage() {
     const [mode, setMode] = useState<Mode>('login')
     const [name, setName] = useState('')
     const [role, setRole] = useState('grad')
+    const [email, setEmail] = useState('')
     const [topicKo, setTopicKo] = useState('')
     const [topicEn, setTopicEn] = useState('')
     const [loading, setLoading] = useState(false)
@@ -30,7 +31,7 @@ export default function LoginPage() {
         const { data, error: err } = await supabase
             .from('members')
             .select('*')
-            .ilike('name', name.trim())
+            .ilike('name', name.trim().replace(/[\\%_]/g, '\\$&'))
             .single()
         if (err || !data) {
             setError(t('등록된 이름이 없습니다. 처음이라면 "회원 등록"을 눌러주세요.', 'Name not found. If new, click "Register".'))
@@ -47,7 +48,7 @@ export default function LoginPage() {
         setError('')
         const { data, error: err } = await supabase
             .from('members')
-            .insert({ name: name.trim(), role, topic_ko: topicKo, topic_en: topicEn, progress: 0 })
+            .insert({ name: name.trim(), role, email: email.trim(), topic_ko: topicKo, topic_en: topicEn, progress: 0 })
             .select()
             .single()
         if (err) {
@@ -93,6 +94,15 @@ export default function LoginPage() {
                                         <option key={r.value} value={r.value}>{t(r.ko, r.en)}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="form-group">
+                                <label>{t('이메일 (할 일·마감 알림 수신용)', 'Email (for task & deadline alerts)')}</label>
+                                <input
+                                    type="email"
+                                    placeholder={t('예: hong@university.ac.kr', 'e.g. hong@university.ac.kr')}
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                />
                             </div>
                             <div className="form-group">
                                 <label>{t('연구 주제 (한글)', 'Research Topic (Korean)')}</label>

@@ -217,7 +217,7 @@ export default function FeedPage() {
                                         placeholder={t('댓글 작성...', 'Write a comment...')}
                                         value={commentInput[post.id] || ''}
                                         onChange={e => setCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))}
-                                        onKeyDown={e => { if (e.key === 'Enter') submitComment(post.id) }}
+                                        onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitComment(post.id) }}
                                     />
                                     <button className="btn btn-primary" onClick={() => submitComment(post.id)} style={{ padding: '0.7rem 1rem' }}>
                                         {t('등록', 'Send')}

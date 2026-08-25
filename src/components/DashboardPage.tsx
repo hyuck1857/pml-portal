@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 
 type Member = {
-    id: string; name: string; role: string; topic_ko: string; topic_en: string; progress: number
+    id: string; name: string; role: string; topic_ko: string; topic_en: string; progress: number; email?: string
 }
 
 const ROLE_LABELS: Record<string, { ko: string; en: string; filter: string }> = {
@@ -15,7 +15,7 @@ const ROLE_LABELS: Record<string, { ko: string; en: string; filter: string }> = 
 }
 
 export default function DashboardPage() {
-    const { user, lang, t } = useAuth()
+    const { user, lang, t, setUser } = useAuth()
     const [members, setMembers] = useState<Member[]>([])
     const [filter, setFilter] = useState('all')
     const [loading, setLoading] = useState(true)
@@ -23,6 +23,7 @@ export default function DashboardPage() {
     const [editProgress, setEditProgress] = useState(0)
     const [editTopicKo, setEditTopicKo] = useState('')
     const [editTopicEn, setEditTopicEn] = useState('')
+    const [editEmail, setEditEmail] = useState('')
     const [saving, setSaving] = useState(false)
 
     useEffect(() => { fetchMembers() }, [])
@@ -36,12 +37,22 @@ export default function DashboardPage() {
 
     async function saveEdit() {
         if (!editTarget) return
+        const emailVal = editEmail.trim()
+        if (emailVal && !/^\S+@\S+\.\S+$/.test(emailVal)) {
+            alert(t('이메일 형식이 올바르지 않습니다.', 'Invalid email format.'))
+            return
+        }
         setSaving(true)
         await supabase.from('members').update({
             progress: editProgress,
             topic_ko: editTopicKo,
             topic_en: editTopicEn,
+            email: editEmail.trim(),
         }).eq('id', editTarget.id)
+        // 본인 정보 수정이면 로그인 컨텍스트에도 반영 (홈 이메일 배너 등)
+        if (user && user.id === editTarget.id) {
+            setUser({ ...user, progress: editProgress, topic_ko: editTopicKo, topic_en: editTopicEn, email: editEmail.trim() })
+        }
         setSaving(false)
         setEditTarget(null)
         fetchMembers()
@@ -105,7 +116,7 @@ export default function DashboardPage() {
                             <button
                                 className="btn btn-ghost"
                                 style={{ marginTop: '1.2rem', width: '100%', justifyContent: 'center' }}
-                                onClick={() => { setEditTarget(m); setEditProgress(m.progress); setEditTopicKo(m.topic_ko); setEditTopicEn(m.topic_en) }}
+                                onClick={() => { setEditTarget(m); setEditProgress(m.progress); setEditTopicKo(m.topic_ko); setEditTopicEn(m.topic_en); setEditEmail(m.email || '') }}
                             >
                                 ✏️ {t('내 정보 수정', 'Edit My Info')}
                             </button>
@@ -118,6 +129,10 @@ export default function DashboardPage() {
                 <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setEditTarget(null) }}>
                     <div className="modal">
                         <h3>{t('내 연구 정보 업데이트', 'Update My Research Info')}</h3>
+                        <div className="form-group">
+                            <label>{t('이메일 (할 일·마감 알림 수신용)', 'Email (for task & deadline alerts)')}</label>
+                            <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder={t('예: hong@university.ac.kr', 'e.g. hong@university.ac.kr')} />
+                        </div>
                         <div className="form-group">
                             <label>{t('연구 주제 (한글)', 'Topic (Korean)')}</label>
                             <input value={editTopicKo} onChange={e => setEditTopicKo(e.target.value)} placeholder="예: 근권 미생물 군집 분석" />

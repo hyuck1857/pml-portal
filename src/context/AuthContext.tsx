@@ -8,6 +8,7 @@ type Member = {
     topic_ko: string
     topic_en: string
     progress: number
+    email?: string
 }
 
 type AuthCtx = {
