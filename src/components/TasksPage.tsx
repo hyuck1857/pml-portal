@@ -174,6 +174,13 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
         fetchTasks()
     }
 
+    // 히스토리에서 삭제: 본인(담당자)·등록자·PI가 자기 기록을 정리할 수 있음 (영구 삭제)
+    async function deleteHistoryTask(task: Task) {
+        if (!window.confirm(t('이 기록을 완전히 삭제하시겠습니까? 되돌릴 수 없습니다.', 'Delete this record permanently? This cannot be undone.'))) return
+        await supabase.from('tasks').delete().eq('id', task.id)
+        fetchTasks()
+    }
+
     function openNewModal(presetAssignee?: string, presetProject?: string) {
         setEditingTask(null)
         setAssigneeId(presetAssignee || user?.id || (members[0]?.id ?? ''))
@@ -609,6 +616,15 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
                                                 />
                                                 {t('확인함', 'Confirmed')}
                                             </label>
+                                        )}
+                                        {(isPI || isMine(tk) || tk.created_by === user?.name) && (
+                                            <button
+                                                className="btn btn-danger btn-xs"
+                                                title={t('기록에서 완전히 삭제', 'Delete permanently')}
+                                                onClick={() => deleteHistoryTask(tk)}
+                                            >
+                                                🗑
+                                            </button>
                                         )}
                                     </div>
                                 )
