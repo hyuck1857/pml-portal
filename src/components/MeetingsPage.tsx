@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { Task, Meeting, Member, TASK_STATUS, isOpen, daysUntil, ddayLabel, todayStr } from '@/lib/types'
+import Linkify from '@/components/Linkify'
 
 export default function MeetingsPage() {
     const { user, t } = useAuth()
@@ -240,7 +241,7 @@ export default function MeetingsPage() {
                         </div>
 
                         {m.notes && (
-                            <div className="meeting-notes" style={{ marginTop: '1rem' }}>{m.notes}</div>
+                            <div className="meeting-notes" style={{ marginTop: '1rem' }}><Linkify text={m.notes} /></div>
                         )}
 
                         <div style={{ marginTop: '1.2rem' }}>

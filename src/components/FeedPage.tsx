@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import Linkify from '@/components/Linkify'
 
 type Post = {
     id: string; author_name: string; title: string; content: string; created_at: string;
@@ -173,7 +174,7 @@ export default function FeedPage() {
                                 <span>{fmtDate(post.created_at)}</span>
                             </div>
                             <h3 className="post-title">{post.title}</h3>
-                            <p className="post-content">{post.content}</p>
+                            <p className="post-content"><Linkify text={post.content} /></p>
 
                             <div className="post-footer">
                                 <button 
@@ -204,7 +205,7 @@ export default function FeedPage() {
                                 {(comments[post.id] || []).map(c => (
                                     <div key={c.id} className="comment-item">
                                         <div className="comment-author">{c.author_name}</div>
-                                        <div className="comment-text">{c.content}</div>
+                                        <div className="comment-text"><Linkify text={c.content} /></div>
                                     </div>
                                 ))}
                                 {comments[post.id]?.length === 0 && (

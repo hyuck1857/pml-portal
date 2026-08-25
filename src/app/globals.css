@@ -20,11 +20,45 @@
     --blue: #3b82f6;
     --yellow: #f59e0b;
     --purple: #a78bfa;
-    /* 할일 상태 차트 색 (다크 배경 색각이상 검증 통과 조합) */
+    /* 할일 상태 차트 색 (밝은/어두운 배경 모두 색각이상 검증 통과 조합) */
     --st-todo: #b45309;
     --st-doing: #3b82f6;
     --st-done: #059669;
     --st-confirmed: #8b5cf6;
+    /* 표면 색 (테마 전환용) */
+    --surface-1: rgba(255, 255, 255, 0.02);
+    --surface-2: rgba(255, 255, 255, 0.03);
+    --surface-3: rgba(255, 255, 255, 0.05);
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --track: rgba(255, 255, 255, 0.07);
+    --nav-bg: rgba(10, 14, 12, 0.85);
+    --nav-bg-solid: rgba(10, 14, 12, 0.97);
+    --focus-cell: #16251e;
+}
+
+/* 밝은 테마 (상단 ☀️/🌙 버튼으로 전환, localStorage에 저장) */
+[data-theme="light"] {
+    --bg: #eef2f0;
+    --bg2: #ffffff;
+    --card: rgba(255, 255, 255, 0.9);
+    --green: #0b8f63;
+    --green2: #10b981;
+    --green-glow: rgba(16, 185, 129, 0.25);
+    --text: #14201b;
+    --muted: #5a6e66;
+    --border: rgba(0, 0, 0, 0.1);
+    --red: #dc2626;
+    --blue: #2563eb;
+    --yellow: #a16207;
+    --purple: #7c3aed;
+    --surface-1: rgba(0, 0, 0, 0.02);
+    --surface-2: rgba(0, 0, 0, 0.035);
+    --surface-3: rgba(0, 0, 0, 0.055);
+    --input-bg: rgba(0, 0, 0, 0.04);
+    --track: rgba(0, 0, 0, 0.08);
+    --nav-bg: rgba(255, 255, 255, 0.85);
+    --nav-bg-solid: rgba(255, 255, 255, 0.97);
+    --focus-cell: #e3f2ea;
 }
 
 html {
@@ -128,7 +162,7 @@ input,
 textarea,
 select {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--input-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 0.85rem 1rem;
@@ -150,7 +184,8 @@ select:focus {
 }
 
 select option {
-    background: #111;
+    background: var(--bg2);
+    color: var(--text);
 }
 
 label {
@@ -219,7 +254,7 @@ label {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(10, 14, 12, 0.85);
+    background: var(--nav-bg);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
 }
@@ -420,7 +455,7 @@ label {
 
 .progress-track {
     height: 6px;
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--track);
     border-radius: 3px;
     overflow: hidden;
     margin-top: 0.4rem;
@@ -515,7 +550,7 @@ label {
 .comment-item {
     padding: 0.8rem 1rem;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-2);
     margin-bottom: 0.8rem;
 }
 
@@ -561,7 +596,7 @@ label {
 .event-item {
     padding: 1.2rem 1.5rem;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-2);
     border: 1px solid var(--border);
     display: flex;
     align-items: flex-start;
@@ -755,7 +790,7 @@ label {
         left: 0;
         right: 0;
         z-index: 200;
-        background: rgba(10, 14, 12, 0.97);
+        background: var(--nav-bg-solid);
         backdrop-filter: blur(20px);
         border-top: 1px solid var(--border);
         padding: 0.5rem 0 env(safe-area-inset-bottom, 0.5rem);
@@ -874,7 +909,7 @@ label {
 }
 
 .chip-muted {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-3);
     color: var(--muted);
     border: 1px solid var(--border);
 }
@@ -966,7 +1001,7 @@ label {
 }
 
 .task-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 0.9rem 1rem;
@@ -1056,7 +1091,7 @@ label {
     align-items: center;
     gap: 0.7rem;
     padding: 0.75rem 0.9rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 10px;
     margin-bottom: 0.5rem;
@@ -1101,7 +1136,7 @@ label {
     align-items: center;
     gap: 0.7rem;
     padding: 0.7rem 0.9rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 10px;
     margin-bottom: 0.5rem;
@@ -1287,11 +1322,11 @@ label {
     position: sticky;
     left: 0;
     z-index: 1;
-    background: #111916;
+    background: var(--bg2);
 }
 
 .summary-table tbody tr.focused td:first-child {
-    background: #16251e;
+    background: var(--focus-cell);
 }
 
 .summary-table .num {
@@ -1318,7 +1353,7 @@ label {
     height: 100%;
     width: 100%;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-3);
 }
 
 /* 컬럼 내 프로젝트 그룹 (장기 프로젝트 상시 표시) */
@@ -1327,7 +1362,7 @@ label {
     border-radius: 12px;
     padding: 0.85rem 0.9rem;
     margin-bottom: 0.8rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--surface-1);
 }
 
 .proj-group-header {
@@ -1346,7 +1381,7 @@ label {
 }
 
 .proj-group .task-card {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--input-bg);
     margin-top: 0.6rem;
     margin-bottom: 0;
 }

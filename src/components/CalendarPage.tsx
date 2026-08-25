@@ -155,13 +155,13 @@ export default function CalendarPage() {
         const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
         return (
-            <div style={{ marginTop: '1rem', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ marginTop: '1rem', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--surface-1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--card)' }}>
                     <button className="btn btn-ghost" style={{ padding: '0.4rem 0.8rem' }} onClick={prevMonth}>&lt;</button>
                     <h3 style={{ margin: 0 }}>{currentDate.toLocaleDateString(t('ko-KR', 'en-US'), { year: 'numeric', month: 'long' })}</h3>
                     <button className="btn btn-ghost" style={{ padding: '0.4rem 0.8rem' }} onClick={nextMonth}>&gt;</button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.3)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
                     {weekDays.map(d => <div key={d} style={{ padding: '0.8rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600 }}>{d}</div>)}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', background: 'var(--border)' }}>

@@ -7,6 +7,7 @@ import {
     TASK_STATUS, TASK_TERM, PROJECT_STAGE,
     ddayLabel, daysUntil, isOpen, isOverdue,
 } from '@/lib/types'
+import Linkify from '@/components/Linkify'
 
 type StatusFilter = TaskStatusFilter
 type TermFilter = 'all' | 'short' | 'long'
@@ -56,6 +57,8 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
     const [termFilter, setTermFilter] = useState<TermFilter>('all')
     const [mineOnly, setMineOnly] = useState(false)
     const [focusMember, setFocusMember] = useState<string | null>(null)
+    const [view, setView] = useState<'board' | 'history'>('board')
+    const [search, setSearch] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
     const [assigneeId, setAssigneeId] = useState('')
@@ -127,6 +130,35 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
     const summaryRows = members
         .filter(m => m.role !== 'pi' || tasks.some(task => belongsTo(task, m)))
         .map(m => ({ m, c: countsFor(tasks.filter(task => belongsTo(task, m))) }))
+
+    // 히스토리: 완료·확인된 할 일을 완료 시점 기준 최신순으로, 월별 그룹
+    const histDate = (tk: Task) => tk.completed_at || tk.confirmed_at || tk.created_at
+    const historyTasks = tasks
+        .filter(tk => tk.status === 'done' || tk.status === 'confirmed')
+        .filter(tk => {
+            if (!focusMember) return true
+            const m = members.find(mm => mm.id === focusMember)
+            return m ? belongsTo(tk, m) : true
+        })
+        .filter(tk => {
+            const q = search.trim().toLowerCase()
+            if (!q) return true
+            return tk.title.toLowerCase().includes(q)
+                || tk.assignee_name.toLowerCase().includes(q)
+                || (tk.detail || '').toLowerCase().includes(q)
+        })
+        .sort((a, b) => histDate(a) < histDate(b) ? 1 : -1)
+    const historyGroups: { month: string; list: Task[] }[] = []
+    for (const tk of historyTasks) {
+        const month = histDate(tk).slice(0, 7)
+        const last = historyGroups[historyGroups.length - 1]
+        if (last && last.month === month) last.list.push(tk)
+        else historyGroups.push({ month, list: [tk] })
+    }
+    const fmtMonth = (month: string) =>
+        new Date(month + '-01T00:00:00').toLocaleDateString(t('ko-KR', 'en-US'), { year: 'numeric', month: 'long' })
+    const fmtShort = (iso: string) =>
+        new Date(iso).toLocaleDateString(t('ko-KR', 'en-US'), { month: 'numeric', day: 'numeric' })
 
     async function updateStatus(task: Task, patch: Partial<Task>) {
         await supabase.from('tasks').update(patch).eq('id', task.id)
@@ -272,7 +304,7 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
         return (
             <div className={`task-card ${isOverdue(task) ? 'overdue' : ''} ${task.status === 'confirmed' ? 'dimmed' : ''}`}>
                 <div className="task-title">{task.title}</div>
-                {task.detail && <div className="task-detail">{task.detail}</div>}
+                {task.detail && <div className="task-detail"><Linkify text={task.detail} /></div>}
                 <div className="task-meta">
                     <span className={`chip ${st.cls}`}>{t(st.ko, st.en)}</span>
                     {dueChip(task)}
@@ -390,6 +422,16 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
 
             {!loading && (
                 <>
+                    <div className="filter-row" style={{ marginBottom: '0.8rem' }}>
+                        <button className={`filter-chip ${view === 'board' ? 'active' : ''}`} onClick={() => setView('board')}>
+                            📋 {t('진행 보드', 'Board')}
+                        </button>
+                        <button className={`filter-chip ${view === 'history' ? 'active' : ''}`} onClick={() => setView('history')}>
+                            📜 {t('히스토리', 'History')}
+                        </button>
+                    </div>
+                    {view === 'board' && (
+                        <>
                     <div className="filter-row" style={{ marginBottom: '0.6rem' }}>
                         {([
                             { value: 'all', ko: '전체', en: 'All' },
@@ -416,6 +458,8 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
                             👤 {t('내 것만', 'Mine Only')}
                         </button>
                     </div>
+                        </>
+                    )}
                     {focusMember && (
                         <div className="banner" style={{ background: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.35)' }}>
                             <span>
@@ -432,7 +476,7 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
                 </>
             )}
 
-            {!loading && visibleColumns.length === 0 && (
+            {!loading && view === 'board' && visibleColumns.length === 0 && (
                 <div className="empty-state">
                     <div className="emoji">📋</div>
                     <h4>{t('표시할 할 일이 없습니다.', 'No tasks to show.')}</h4>
@@ -440,7 +484,7 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
                 </div>
             )}
 
-            {!loading && visibleColumns.length > 0 && (
+            {!loading && view === 'board' && visibleColumns.length > 0 && (
                 <div className="task-board">
                     {visibleColumns.map(m => {
                         const colTasks = visibleTasks.filter(task => belongsTo(task, m))
@@ -512,6 +556,65 @@ export default function TasksPage({ initialStatus }: { initialStatus?: StatusFil
                             </div>
                         )
                     })}
+                </div>
+            )}
+
+            {/* 히스토리: 완료·확인된 할 일의 월별 기록 */}
+            {!loading && view === 'history' && (
+                <div className="section">
+                    <div style={{ maxWidth: 440, marginBottom: '1.2rem' }}>
+                        <input
+                            placeholder={t('🔍 제목·담당자·내용 검색...', '🔍 Search title, assignee, detail...')}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
+                    {historyTasks.length === 0 && (
+                        <div className="empty-state">
+                            <div className="emoji">📜</div>
+                            <h4>{t('기록된 완료 할 일이 없습니다.', 'No completed tasks yet.')}</h4>
+                            <p>{t('할 일이 완료되면 여기에 월별로 쌓입니다.', 'Completed tasks will accumulate here by month.')}</p>
+                        </div>
+                    )}
+                    {historyGroups.map(g => (
+                        <div key={g.month} style={{ marginBottom: '1.6rem' }}>
+                            <h3 style={{ fontSize: '1rem', marginBottom: '0.7rem' }}>
+                                📅 {fmtMonth(g.month)}
+                                <span style={{ color: 'var(--muted)', fontWeight: 500, fontSize: '0.82rem', marginLeft: '0.5rem' }}>
+                                    {t(`${g.list.length}건`, `${g.list.length} tasks`)}
+                                </span>
+                            </h3>
+                            {g.list.map(tk => {
+                                const proj = tk.project_id ? projects.find(p => p.id === tk.project_id) : null
+                                return (
+                                    <div key={tk.id} className="list-row">
+                                        <span style={{ fontWeight: 700 }}>{tk.assignee_name}</span>
+                                        <span className="grow">{tk.title}</span>
+                                        {proj && <span className="chip chip-muted">🧪 {proj.title}</span>}
+                                        <span className={`chip ${TASK_STATUS[tk.status].cls}`}>
+                                            {t(TASK_STATUS[tk.status].ko, TASK_STATUS[tk.status].en)}
+                                        </span>
+                                        <span style={{ color: 'var(--muted)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                                            {tk.completed_at && `${t('완료', 'Done')} ${fmtShort(tk.completed_at)}`}
+                                            {tk.confirmed_at && ` · ${t('확인', 'Confirmed')} ${fmtShort(tk.confirmed_at)}`}
+                                        </span>
+                                        {isPI && (
+                                            <label className="check-confirm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={tk.status === 'confirmed'}
+                                                    onChange={e => e.target.checked
+                                                        ? updateStatus(tk, { status: 'confirmed', confirmed_at: new Date().toISOString() })
+                                                        : updateStatus(tk, { status: 'done', confirmed_at: null })}
+                                                />
+                                                {t('확인함', 'Confirmed')}
+                                            </label>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ))}
                 </div>
             )}
 

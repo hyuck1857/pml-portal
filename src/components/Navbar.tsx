@@ -18,7 +18,7 @@ const MOBILE_MAIN: Tab[] = ['home', 'tasks', 'meetings', 'research']
 const MOBILE_MORE: Tab[] = ['feed', 'calendar', 'members']
 
 export default function Navbar({ activeTab, setActiveTab }: { activeTab: Tab, setActiveTab: (t: Tab) => void }) {
-  const { user, lang, toggleLang, logout, t } = useAuth()
+  const { user, lang, theme, toggleLang, toggleTheme, logout, t } = useAuth()
   const [moreOpen, setMoreOpen] = useState(false)
 
   const mainTabs = TABS.filter(tab => MOBILE_MAIN.includes(tab.id))
@@ -46,6 +46,9 @@ export default function Navbar({ activeTab, setActiveTab }: { activeTab: Tab, se
           </div>
 
           <div className="nav-right">
+            <button className="lang-btn" onClick={toggleTheme} title={t('밝은/어두운 테마 전환', 'Toggle light/dark theme')}>
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <button className="lang-btn" onClick={toggleLang}>{lang === 'ko' ? 'EN' : '한글'}</button>
             {user && (
               <>
@@ -97,6 +100,9 @@ export default function Navbar({ activeTab, setActiveTab }: { activeTab: Tab, se
                 <span>{tab.icon}</span> {t(tab.ko, tab.en)}
               </button>
             ))}
+            <button className="sheet-item" onClick={toggleTheme}>
+              <span>{theme === 'dark' ? '☀️' : '🌙'}</span> {theme === 'dark' ? t('밝은 테마', 'Light theme') : t('어두운 테마', 'Dark theme')}
+            </button>
             <button className="sheet-item" onClick={toggleLang}>
               <span>🌐</span> {lang === 'ko' ? 'English' : '한국어'}
             </button>

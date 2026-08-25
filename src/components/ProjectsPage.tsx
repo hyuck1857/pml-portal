@@ -6,6 +6,7 @@ import {
     Member, Project, ProjectUpdate, ProjectStage,
     PROJECT_STAGE, PROJECT_STAGE_ORDER, daysUntil, ddayLabel,
 } from '@/lib/types'
+import Linkify from '@/components/Linkify'
 
 type ProjectRow = Project & { project_updates?: { id: string }[] }
 
@@ -253,7 +254,7 @@ export default function ProjectsPage() {
                                             {list.map(u => (
                                                 <div key={u.id} className="update-item">
                                                     <div className="update-date">{fmtDate(u.created_at)} · {u.author_name}</div>
-                                                    <div className="update-text">{u.content}</div>
+                                                    <div className="update-text"><Linkify text={u.content} /></div>
                                                 </div>
                                             ))}
                                             {canManage(p) && (
