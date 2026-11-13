@@ -5,7 +5,7 @@ echo ========================================
 echo  포털 업데이트 Github 업로드 중...
 echo ========================================
 git add .
-git commit -m "Portal v2: tasks, lab meetings, research progress, email notifications"
+git commit -m "Portal update"
 git push origin main
 echo.
 echo ========================================

@@ -6,13 +6,7 @@ export default function Linkify({ text }: { text: string }) {
         <>
             {parts.map((part, i) =>
                 /^https?:\/\//.test(part) ? (
-                    <a
-                        key={i}
-                        href={part}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: 'var(--green)', textDecoration: 'underline', wordBreak: 'break-all' }}
-                    >
+                    <a key={i} className="link" href={part} target="_blank" rel="noopener noreferrer">
                         {part}
                     </a>
                 ) : (

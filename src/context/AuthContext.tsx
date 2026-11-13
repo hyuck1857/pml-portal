@@ -1,21 +1,14 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-
-type Member = {
-    id: string
-    name: string
-    role: string
-    topic_ko: string
-    topic_en: string
-    progress: number
-    email?: string
-}
+import { Member } from '@/lib/types'
 
 type Theme = 'dark' | 'light'
+type Lang = 'ko' | 'en'
 
 type AuthCtx = {
     user: Member | null
-    lang: 'ko' | 'en'
+    ready: boolean
+    lang: Lang
     theme: Theme
     setUser: (u: Member | null) => void
     toggleLang: () => void
@@ -25,57 +18,60 @@ type AuthCtx = {
 }
 
 const AuthContext = createContext<AuthCtx>({
-    user: null, lang: 'ko', theme: 'dark',
+    user: null, ready: false, lang: 'ko', theme: 'light',
     setUser: () => { }, toggleLang: () => { }, toggleTheme: () => { }, logout: () => { },
     t: (ko) => ko,
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUserState] = useState<Member | null>(null)
-    const [lang, setLang] = useState<'ko' | 'en'>('ko')
-    const [theme, setTheme] = useState<Theme>('dark')
+    const [ready, setReady] = useState(false)
+    const [lang, setLang] = useState<Lang>('ko')
+    const [theme, setTheme] = useState<Theme>('light')
 
     useEffect(() => {
-        const saved = localStorage.getItem('pml_user')
-        if (saved) setUserState(JSON.parse(saved))
-        const savedLang = localStorage.getItem('pml_lang') as 'ko' | 'en' | null
-        if (savedLang) setLang(savedLang)
-        const savedTheme = localStorage.getItem('pml_theme') as Theme | null
-        if (savedTheme) setTheme(savedTheme)
+        try {
+            const saved = localStorage.getItem('pml_user')
+            if (saved) setUserState(JSON.parse(saved))
+            const savedLang = localStorage.getItem('pml_lang') as Lang | null
+            if (savedLang === 'ko' || savedLang === 'en') setLang(savedLang)
+            const savedTheme = localStorage.getItem('pml_theme') as Theme | null
+            if (savedTheme === 'dark' || savedTheme === 'light') setTheme(savedTheme)
+        } catch { }
+        setReady(true)
     }, [])
 
-    // 테마를 <html data-theme="...">로 반영 (globals.css의 [data-theme="light"] 변수 활성화)
+    // 테마를 <html data-theme="...">로 반영
     useEffect(() => {
         document.documentElement.dataset.theme = theme
     }, [theme])
 
     const setUser = (u: Member | null) => {
         setUserState(u)
-        if (u) localStorage.setItem('pml_user', JSON.stringify(u))
-        else localStorage.removeItem('pml_user')
+        try {
+            if (u) localStorage.setItem('pml_user', JSON.stringify(u))
+            else localStorage.removeItem('pml_user')
+        } catch { }
     }
 
     const toggleLang = () => {
-        const next = lang === 'ko' ? 'en' : 'ko'
+        const next: Lang = lang === 'ko' ? 'en' : 'ko'
         setLang(next)
-        localStorage.setItem('pml_lang', next)
+        try { localStorage.setItem('pml_lang', next) } catch { }
     }
 
     const toggleTheme = () => {
         const next: Theme = theme === 'dark' ? 'light' : 'dark'
         setTheme(next)
-        localStorage.setItem('pml_theme', next)
+        try { localStorage.setItem('pml_theme', next) } catch { }
     }
 
-    const logout = () => {
-        setUser(null)
-        localStorage.removeItem('pml_user')
-    }
+    const logout = () => setUser(null)
 
-    const t = (ko: string, en: string) => lang === 'ko' ? ko : en
+    const t = (ko: string, en: string) => (lang === 'ko' ? ko : en)
 
     return (
-        <AuthContext.Provider value={{ user, lang, theme, setUser, toggleLang, toggleTheme, logout, t }}>
+        <AuthContext.Provider value={{ user, ready, lang, theme, setUser, toggleLang, toggleTheme, logout, t }}>
             {children}
         </AuthContext.Provider>
     )

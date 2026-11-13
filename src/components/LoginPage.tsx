@@ -13,7 +13,7 @@ const ROLES = [
 ]
 
 export default function LoginPage() {
-    const { setUser, t } = useAuth()
+    const { setUser, toggleLang, lang, t } = useAuth()
     const [mode, setMode] = useState<Mode>('login')
     const [name, setName] = useState('')
     const [role, setRole] = useState('grad')
@@ -63,19 +63,18 @@ export default function LoginPage() {
 
     return (
         <div className="login-page">
-            <div className="glass login-box">
+            <div className="login-box">
                 <div className="login-logo">🌿</div>
                 <h1>PML Portal</h1>
-                <p>
+                <p className="sub">
                     {mode === 'login'
-                        ? t('본인의 이름을 입력하여 접속하세요.', 'Enter your name to access the portal.')
-                        : t('처음이시라면 아래 정보를 입력하여 등록하세요.', 'Enter your details to register.')
-                    }
+                        ? t('이름을 입력하고 들어오세요.', 'Enter your name to continue.')
+                        : t('처음이시라면 아래 정보를 입력해 등록하세요.', 'Enter your details to register.')}
                 </p>
 
                 <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
-                    <div className="form-group">
-                        <label>{t('이름 (풀네임)', 'Full Name')}</label>
+                    <label className="field">
+                        <span>{t('이름 (풀네임)', 'Full name')}</span>
                         <input
                             type="text"
                             placeholder={t('예: 김철수, John Doe', 'e.g. 김철수, John Doe')}
@@ -83,68 +82,48 @@ export default function LoginPage() {
                             onChange={e => setName(e.target.value)}
                             autoFocus
                         />
-                    </div>
+                    </label>
 
                     {mode === 'register' && (
                         <>
-                            <div className="form-group">
-                                <label>{t('역할', 'Role')}</label>
+                            <label className="field">
+                                <span>{t('역할', 'Role')}</span>
                                 <select value={role} onChange={e => setRole(e.target.value)}>
                                     {ROLES.map(r => (
                                         <option key={r.value} value={r.value}>{t(r.ko, r.en)}</option>
                                     ))}
                                 </select>
-                            </div>
-                            <div className="form-group">
-                                <label>{t('이메일 (할 일·마감 알림 수신용)', 'Email (for task & deadline alerts)')}</label>
-                                <input
-                                    type="email"
-                                    placeholder={t('예: hong@university.ac.kr', 'e.g. hong@university.ac.kr')}
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('연구 주제 (한글)', 'Research Topic (Korean)')}</label>
-                                <input
-                                    placeholder={t('예: 근권 미생물 군집 분석', 'e.g. 근권 미생물 군집 분석')}
-                                    value={topicKo}
-                                    onChange={e => setTopicKo(e.target.value)}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('Research Topic (English)', 'Research Topic (English)')}</label>
-                                <input
-                                    placeholder="e.g. Rhizosphere microbial community analysis"
-                                    value={topicEn}
-                                    onChange={e => setTopicEn(e.target.value)}
-                                />
-                            </div>
+                            </label>
+                            <label className="field">
+                                <span>{t('이메일 (교수님 요청·기한 알림 수신)', 'Email (request & due-date alerts)')}</span>
+                                <input type="email" placeholder="name@university.ac.kr" value={email} onChange={e => setEmail(e.target.value)} />
+                            </label>
+                            <label className="field">
+                                <span>{t('연구 주제 (한글)', 'Research topic (Korean)')}</span>
+                                <input placeholder="예: 근권 미생물 군집 분석" value={topicKo} onChange={e => setTopicKo(e.target.value)} />
+                            </label>
+                            <label className="field">
+                                <span>Research topic (English)</span>
+                                <input placeholder="e.g. Rhizosphere microbial community analysis" value={topicEn} onChange={e => setTopicEn(e.target.value)} />
+                            </label>
                         </>
                     )}
 
                     {error && <p className="login-error">{error}</p>}
 
-                    <button
-                        className="btn btn-primary"
-                        type="submit"
-                        disabled={loading}
-                        style={{ width: '100%', marginTop: '0.5rem', justifyContent: 'center', fontSize: '1rem', padding: '0.9rem' }}
-                    >
+                    <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
                         {loading
-                            ? t('처리 중...', 'Processing...')
-                            : mode === 'login'
-                                ? t('🔬  연구실 입장', '🔬  Enter Lab')
-                                : t('✅  등록하기', '✅  Register')
-                        }
+                            ? t('처리 중…', 'Processing…')
+                            : mode === 'login' ? t('들어가기', 'Enter') : t('등록하기', 'Register')}
                     </button>
                 </form>
 
-                <p className="register-link">
+                <p className="login-foot">
                     {mode === 'login'
-                        ? <>{t('처음이세요?', 'New here?')} <button onClick={() => { setMode('register'); setError('') }}>{t('회원 등록', 'Register')}</button></>
-                        : <>{t('이미 등록됐나요?', 'Already registered?')} <button onClick={() => { setMode('login'); setError('') }}>{t('로그인', 'Login')}</button></>
-                    }
+                        ? <>{t('처음이세요?', 'New here?')} <button className="link-btn" onClick={() => { setMode('register'); setError('') }}>{t('회원 등록', 'Register')}</button></>
+                        : <>{t('이미 등록됐나요?', 'Already registered?')} <button className="link-btn" onClick={() => { setMode('login'); setError('') }}>{t('로그인', 'Login')}</button></>}
+                    <span className="grow" />
+                    <button className="link-btn" onClick={toggleLang}>{lang === 'ko' ? 'English' : '한국어'}</button>
                 </p>
             </div>
         </div>

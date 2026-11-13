@@ -1,6 +1,6 @@
 // 매일 크론 (Vercel Cron, UTC 00:00 = KST 09:00)
 // ① 마감 리마인드: 오늘/3일 후 마감인 미완료 할일을 담당자별로 묶어 이메일 1통씩
-// ② 월요일(KST): 미완료 + 확인 대기 할일 다이제스트를 PI 전원에게 발송
+// ② 월요일(KST): 진행 중 + 지난 7일 완료 항목 요약을 PI 전원에게 발송
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendMail, emailLayout, taskRowHtml } from '@/lib/email'
@@ -80,14 +80,16 @@ export async function GET(req: Request) {
             const piEmails = members
                 .filter(m => m.role === 'pi' && (m.email || '').trim())
                 .map(m => (m.email || '').trim())
+            // 아직 안 끝난 것 + 지난 7일 사이 완료된 것
+            const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
             const { data: weekData } = await supabase
                 .from('tasks')
                 .select('*')
-                .in('status', ['todo', 'doing', 'done'])
+                .or(`status.in.(todo,doing),completed_at.gte."${weekAgo}"`)
                 .order('due_date', { ascending: true })
             const weekTasks = (weekData || []) as Task[]
             const openCount = weekTasks.filter(t => t.status === 'todo' || t.status === 'doing').length
-            const doneCount = weekTasks.filter(t => t.status === 'done').length
+            const doneCount = weekTasks.length - openCount
 
             if (piEmails.length > 0 && weekTasks.length > 0) {
                 const byName = new Map<string, Task[]>()
@@ -104,8 +106,8 @@ export async function GET(req: Request) {
                                 (t.status === 'todo' || t.status === 'doing') && !!t.due_date && t.due_date < today
                             const mark = overdue
                                 ? `<div style="color:#ef4444;font-weight:700;font-size:12px;margin-bottom:2px;">&#9888; 기한 지남 (~${t.due_date})</div>`
-                                : t.status === 'done'
-                                    ? `<div style="color:#10b981;font-weight:700;font-size:12px;margin-bottom:2px;">&#9989; 완료 — 확인 대기</div>`
+                                : t.status === 'done' || t.status === 'confirmed'
+                                    ? `<div style="color:#10b981;font-weight:700;font-size:12px;margin-bottom:2px;">&#9989; 완료</div>`
                                     : ''
                             return mark + taskRowHtml(t)
                         })
@@ -116,8 +118,8 @@ export async function GET(req: Request) {
                 }
                 digest = await sendMail(
                     piEmails,
-                    `[PML] 주간 요약 — 미완료 ${openCount}건 · 확인 대기 ${doneCount}건`,
-                    emailLayout('이번 주 할 일 요약', sections.join('')),
+                    `[PML] 주간 요약 — 진행 중 ${openCount}건 · 지난주 완료 ${doneCount}건`,
+                    emailLayout('연구원별 요청 · 계획 요약', sections.join('')),
                 )
             }
         }

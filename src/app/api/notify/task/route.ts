@@ -40,16 +40,16 @@ export async function POST(req: Request) {
         }
 
         const infoBits: string[] = []
-        if (task.created_by) infoBits.push(`지시: ${task.created_by}`)
-        if (task.due_date) infoBits.push(`마감: ${task.due_date}`)
+        if (task.created_by) infoBits.push(`요청: ${task.created_by}`)
+        if (task.due_date) infoBits.push(`기한: ${task.due_date}`)
         const info = infoBits.length > 0
             ? `<p style="color:#8a9e97;font-size:13px;margin:12px 0 0;">${infoBits.join(' &middot; ')}</p>`
             : ''
 
         const sent = await sendMail(
             email,
-            `[PML] 새 할 일: ${task.title}`,
-            emailLayout('새 할 일이 등록되었습니다', taskRowHtml(task) + info),
+            `[PML] 새 요청: ${task.title}`,
+            emailLayout('교수님이 새 요청을 남겼습니다', taskRowHtml(task) + info),
         )
         return NextResponse.json({ sent })
     } catch (e) {
